@@ -2,8 +2,10 @@ import { useState, useEffect } from 'react';
 import { Container, Typography, TextField, Button, Grid, Paper, List, ListItem, ListItemText, CircularProgress } from '@mui/material';
 import { useUserStore } from '../store';
 import { env } from '../environemnt'
+import { useNavigate } from 'react-router-dom';
 
 function ChatPage() {
+  const nav = useNavigate()
 //@ts-ignore 
   const user = useUserStore(state => state.user);
   const [threads, setThreads] = useState([]);
@@ -15,16 +17,30 @@ function ChatPage() {
 
   // Simulated API call to fetch chat threads
   useEffect(() => {
-    setThreads(user.threads)
+    if (user) {
+      setThreads(user.threads)
+    } else {
+      nav('/login')
+    }
   }, []);
 
   useEffect(() => {
     if (selectedThread) {
-      const fetchMessages = async () => {
-        
-      };
-
-      fetchMessages();
+      fetch(`${env.api_url}/messages/${selectedThread}`
+      ).then(async (data) => {
+        const jsonData = await data.json()
+            setCurrThreadId(jsonData.data[0].thread_id)
+            const messages = [];
+            for (const msg of jsonData.data){
+                messages.push({
+                    id: msg?.id,
+                    sender: msg?.role,
+                    text: msg?.content[0]?.text.value
+                })
+            }
+            //@ts-ignore
+            setMessages(messages.reverse())
+      })
     }
   }, [selectedThread]);
   //@ts-ignore
@@ -101,12 +117,13 @@ function ChatPage() {
   };
 
   const handleCreateNewThread = () => {
-    const newThreadId = threads.length + 1;
-    const newThread = { id: newThreadId, name: `Thread ${newThreadId}`, messages: [] };
-    //@ts-ignore
-    setThreads([...threads, newThread]);
-    //@ts-ignore
-    setSelectedThread(newThread);
+    // const newThreadId = threads.length + 1;
+    // const newThread = { id: newThreadId, name: `Thread ${newThreadId}`, messages: [] };
+    // //@ts-ignore
+    // setThreads([...threads, newThread]);
+    // //@ts-ignore
+    // setSelectedThread(newThread);
+    setMessages([])
   };
 
   return (
